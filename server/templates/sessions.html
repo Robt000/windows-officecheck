@@ -1,0 +1,71 @@
+{% extends "base.html" %}
+
+{% block title %}扫描会话 - 企业信息安全审计系统{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-body">
+                    <h2 class="card-title">扫描会话列表</h2>
+                    <p class="card-text">
+                        以下是所有员工电脑的扫描会话记录。
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>员工姓名</th>
+                                    <th>部门</th>
+                                    <th>主机名</th>
+                                    <th>IP地址</th>
+                                    <th>扫描时间</th>
+                                    <th>文档数</th>
+                                    <th>告警数</th>
+                                    <th>操作</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for session in sessions %}
+                                <tr>
+                                    <td>{{ session.id }}</td>
+                                    <td>{{ session.employee_name }}</td>
+                                    <td>{{ session.department }}</td>
+                                    <td>{{ session.hostname }}</td>
+                                    <td>{{ session.ip_address }}</td>
+                                    <td>{{ session.scan_time.strftime('%Y-%m-%d %H:%M:%S') }}</td>
+                                    <td>{{ session.documents|length }}</td>
+                                    <td>
+                                        {% if session.alerts|length > 0 %}
+                                        <span class="badge bg-danger">{{ session.alerts|length }}</span>
+                                        {% else %}
+                                        <span class="badge bg-success">0</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <a href="/session/{{ session.id }}" class="btn btn-sm btn-primary">
+                                            <i class="bi bi-eye"></i> 查看
+                                        </a>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

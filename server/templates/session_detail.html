@@ -1,0 +1,349 @@
+{% extends "base.html" %}
+
+{% block title %}会话详情 - 企业信息安全审计系统{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">扫描会话详情</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <table class="table table-borderless">
+                                <tr>
+                                    <th width="150">机器ID:</th>
+                                    <td>{{ session.machine_id }}</td>
+                                </tr>
+                                <tr>
+                                    <th>主机名:</th>
+                                    <td>{{ session.hostname }}</td>
+                                </tr>
+                                <tr>
+                                    <th>IP地址:</th>
+                                    <td>{{ session.ip_address }}</td>
+                                </tr>
+                                <tr>
+                                    <th>员工姓名:</th>
+                                    <td>{{ session.employee_name }}</td>
+                                </tr>
+                                <tr>
+                                    <th>部门:</th>
+                                    <td>{{ session.department }}</td>
+                                </tr>
+                            </table>
+                        </div>
+                        <div class="col-md-6">
+                            <table class="table table-borderless">
+                                <tr>
+                                    <th width="150">扫描时间:</th>
+                                    <td>{{ session.scan_time.strftime('%Y-%m-%d %H:%M:%S') }}</td>
+                                </tr>
+                                {% if session.scan_start_time %}
+                                <tr>
+                                    <th>开始时间:</th>
+                                    <td>{{ session.scan_start_time.strftime('%Y-%m-%d %H:%M:%S') }}</td>
+                                </tr>
+                                {% endif %}
+                                {% if session.scan_end_time %}
+                                <tr>
+                                    <th>结束时间:</th>
+                                    <td>{{ session.scan_end_time.strftime('%Y-%m-%d %H:%M:%S') }}</td>
+                                </tr>
+                                {% endif %}
+                                {% if session.scan_duration %}
+                                <tr>
+                                    <th>扫描耗时:</th>
+                                    <td>{{ (session.scan_duration // 60)|int }}分{{ (session.scan_duration % 60)|int }}秒</td>
+                                </tr>
+                                {% endif %}
+                                <tr>
+                                    <th>文档数量:</th>
+                                    <td>{{ documents|length }}</td>
+                                </tr>
+                                <tr>
+                                    <th>告警数量:</th>
+                                    <td>{{ alerts|length }}</td>
+                                </tr>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-md-6 mb-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">文件类型统计</h5>
+                </div>
+                <div class="card-body">
+                    <canvas id="extensionsChart" height="250"></canvas>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6 mb-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">关键词统计</h5>
+                </div>
+                <div class="card-body">
+                    <canvas id="keywordsChart" height="250"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-12 mb-4">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="card-title mb-0">告警信息</h5>
+                    <span class="badge bg-danger">{{ alerts|length }}</span>
+                </div>
+                <div class="card-body">
+                    {% if alerts %}
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <div class="input-group">
+                                <input type="text" id="alertSearchInput" class="form-control" placeholder="搜索告警信息...">
+                                <button class="btn btn-outline-secondary" type="button" id="alertSearchButton">搜索</button>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <select id="keywordFilter" class="form-select">
+                                <option value="">全部关键词</option>
+                                {% for keyword in keywords_labels %}
+                                <option value="{{ keyword }}">{{ keyword }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+                    <div class="table-responsive">
+                        <table class="table table-hover" id="alertsTable">
+                            <thead>
+                                <tr>
+                                    <th>文件名</th>
+                                    <th>文件路径</th>
+                                    <th>关键词</th>
+                                    <th>检测时间</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for alert in alerts %}
+                                <tr>
+                                    <td>{{ alert.file_name }}</td>
+                                    <td>{{ alert.file_path }}</td>
+                                    <td><span class="badge bg-danger">{{ alert.keyword }}</span></td>
+                                    <td>{{ alert.detection_time.strftime('%Y-%m-%d %H:%M:%S') }}</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <p class="text-center">未发现告警信息</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-12 mb-4">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="card-title mb-0">文档信息</h5>
+                    <span class="badge bg-primary">{{ documents|length }}</span>
+                </div>
+                <div class="card-body">
+                    {% if documents %}
+                    <div class="input-group mb-3">
+                        <input type="text" id="docSearchInput" class="form-control" placeholder="搜索文档...">
+                        <button class="btn btn-outline-secondary" type="button" id="docSearchButton">搜索</button>
+                    </div>
+                    <div class="table-responsive">
+                        <table class="table table-hover" id="documentsTable">
+                            <thead>
+                                <tr>
+                                    <th>文件名</th>
+                                    <th>路径</th>
+                                    <th>类型</th>
+                                    <th>大小</th>
+                                    <th>创建时间</th>
+                                    <th>修改时间</th>
+                                    <th>作者</th>
+                                    <th>修订号</th>
+                                    <th>公司</th>
+                                    <th>管理者</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for doc in documents %}
+                                <tr>
+                                    <td>{{ doc.file_name }}</td>
+                                    <td>{{ doc.file_path }}</td>
+                                    <td>{{ doc.extension }}</td>
+                                    <td>{{ (doc.size / 1024)|round|int }} KB</td>
+                                    <td>{{ doc.creation_time.strftime('%Y-%m-%d %H:%M') }}</td>
+                                    <td>{{ doc.modified_time.strftime('%Y-%m-%d %H:%M') }}</td>
+                                    <td>{{ doc.author or '-' }}</td>
+                                    <td>{{ doc.revision or '-' }}</td>
+                                    <td>{{ doc.company or '-' }}</td>
+                                    <td>{{ doc.manager or '-' }}</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <p class="text-center">未找到任何文档</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // 初始化文件类型图表
+        var extensionsCtx = document.getElementById('extensionsChart').getContext('2d');
+        var extensionsChart = new Chart(extensionsCtx, {
+            type: 'doughnut',
+            data: {
+                labels: {{ extensions_labels|safe }},
+                datasets: [{
+                    data: {{ extensions_data|safe }},
+                    backgroundColor: [
+                        '#4e73df', '#1cc88a', '#36b9cc', '#f6c23e', '#e74a3b',
+                        '#858796', '#5a5c69', '#3c679e', '#6a9955', '#d39e00'
+                    ],
+                    hoverBorderColor: "rgba(234, 236, 244, 1)",
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'right'
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                var label = context.label || '';
+                                var value = context.raw || 0;
+                                var total = context.dataset.data.reduce((a, b) => a + b, 0);
+                                var percentage = Math.round((value / total) * 100);
+                                return label + ': ' + value + ' (' + percentage + '%)';
+                            }
+                        }
+                    }
+                }
+            }
+        });
+
+        // 初始化关键词图表
+        var keywordsCtx = document.getElementById('keywordsChart').getContext('2d');
+        var keywordsChart = new Chart(keywordsCtx, {
+            type: 'bar',
+            data: {
+                labels: {{ keywords_labels|safe }},
+                datasets: [{
+                    label: '出现次数',
+                    data: {{ keywords_data|safe }},
+                    backgroundColor: 'rgba(231, 74, 59, 0.8)',
+                    borderColor: 'rgba(231, 74, 59, 1)',
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: {
+                            precision: 0
+                        }
+                    }
+                },
+                plugins: {
+                    legend: {
+                        display: false
+                    }
+                }
+            }
+        });
+        
+        // 初始化数据表格
+        var alertsTable = $('#alertsTable').DataTable({
+            "language": {
+                "url": "//cdn.datatables.net/plug-ins/1.10.25/i18n/Chinese.json"
+            },
+            "pageLength": 10,
+            "order": [[3, "desc"]]
+        });
+        
+        var documentsTable = $('#documentsTable').DataTable({
+            "language": {
+                "url": "//cdn.datatables.net/plug-ins/1.10.25/i18n/Chinese.json"
+            },
+            "pageLength": 10,
+            "order": [[4, "desc"]]
+        });
+        
+        // 关键词过滤功能
+        $('#keywordFilter').on('change', function() {
+            var keyword = $(this).val();
+            alertsTable.column(2).search(keyword).draw();
+        });
+        
+        // 告警搜索功能
+        $('#alertSearchButton').on('click', function() {
+            var searchTerm = $('#alertSearchInput').val();
+            alertsTable.search(searchTerm).draw();
+        });
+        
+        // 文档搜索功能
+        $('#docSearchButton').on('click', function() {
+            var searchTerm = $('#docSearchInput').val();
+            documentsTable.search(searchTerm).draw();
+        });
+        
+        // 搜索框按回车键触发搜索
+        $('#alertSearchInput').on('keypress', function(e) {
+            if (e.which === 13) {
+                $('#alertSearchButton').click();
+            }
+        });
+        
+        $('#docSearchInput').on('keypress', function(e) {
+            if (e.which === 13) {
+                $('#docSearchButton').click();
+            }
+        });
+    });
+</script>
+{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="https://cdn.datatables.net/1.10.25/css/dataTables.bootstrap5.min.css">
+<style>
+    .table th, .table td {
+        vertical-align: middle;
+    }
+    .badge {
+        font-size: 0.8rem;
+        font-weight: normal;
+    }
+</style>
+{% endblock %}

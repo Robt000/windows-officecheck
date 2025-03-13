@@ -1,0 +1,778 @@
+{% extends "base.html" %}
+
+{% block title %}统计分析 - 企业信息安全审计系统{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-body">
+                    <h2 class="card-title">统计分析</h2>
+                    <p class="card-text">
+                        以下是系统收集的数据统计分析。
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-md-6 mb-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">部门统计</h5>
+                </div>
+                <div class="card-body">
+                    <canvas id="departmentChart" height="300"></canvas>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-6 mb-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">文件类型统计</h5>
+                </div>
+                <div class="card-body">
+                    <canvas id="extensionChart" height="300"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-md-12 mb-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">关键词告警统计</h5>
+                </div>
+                <div class="card-body">
+                    <canvas id="keywordChart" height="250"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 新增：告警最多的员工TOP10 -->
+    <div class="row">
+        <div class="col-md-6 mb-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">告警最多的员工TOP10</h5>
+                </div>
+                <div class="card-body">
+                    <canvas id="employeeAlertChart" height="300"></canvas>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 新增：告警关键词触发最多的TOP10 -->
+        <div class="col-md-6 mb-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">告警关键词触发最多的TOP10</h5>
+                </div>
+                <div class="card-body">
+                    <canvas id="keywordTop10Chart" height="300"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">部门详细统计</h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>部门</th>
+                                    <th>扫描会话数</th>
+                                    <th>文档数量</th>
+                                    <th>告警数量</th>
+                                    <th>告警比例</th>
+                                </tr>
+                            </thead>
+                            <tbody id="departments-table-body">
+                                <!-- 将由JS动态填充 -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 新增图表：部门告警数量和部门扫描人数 -->
+    <div class="row">
+        <div class="col-md-6 mb-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">各部门告警数量</h5>
+                </div>
+                <div class="card-body">
+                    <canvas id="departmentAlertChart" height="300"></canvas>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-6 mb-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">各部门扫描会话数</h5>
+                </div>
+                <div class="card-body">
+                    <canvas id="departmentPersonnelChart" height="300"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<!-- 确保Chart.js库已加载 -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<!-- 使用隐藏的div存储图表数据 -->
+<div id="chart-data" style="display: none;"
+     data-departments="{{ departments }}"
+     data-extensions="{{ extensions }}"
+     data-keywords="{{ keywords }}"
+     data-top-employees="{{ top_employees }}"
+     data-top-keywords="{{ top_keywords }}"
+     data-dept-alerts="{{ dept_alerts }}"
+     data-dept-personnel="{{ dept_personnel }}"
+     data-dept-sessions="{{ dept_sessions }}">
+</div>
+
+<!-- 添加调试信息区域 -->
+<div class="row mb-4 debug-info" style="display: none;">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header bg-warning">
+                <h5 class="card-title mb-0">调试信息</h5>
+            </div>
+            <div class="card-body">
+                <h6>部门原始数据:</h6>
+                <pre id="debug-departments"></pre>
+                <h6>文件类型原始数据:</h6>
+                <pre id="debug-extensions"></pre>
+                <h6>关键词原始数据:</h6>
+                <pre id="debug-keywords"></pre>
+                <h6>部门解析后数据:</h6>
+                <pre id="debug-parsed-departments"></pre>
+                <h6>测试数据:</h6>
+                <pre id="debug-test-data">{{ test_data_json|safe }}</pre>
+                <h6>测试文件类型数据:</h6>
+                <pre id="debug-test-extensions">{{ test_extensions_json|safe }}</pre>
+                <h6>测试关键词数据:</h6>
+                <pre id="debug-test-keywords">{{ test_keywords_json|safe }}</pre>
+                <h6>测试员工数据:</h6>
+                <pre id="debug-test-employees">{{ test_employees_json|safe }}</pre>
+                <div class="mt-3">
+                    <button id="use-test-data-btn" class="btn btn-success">使用测试数据</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// 在页面加载完成后初始化图表
+document.addEventListener('DOMContentLoaded', function() {
+    try {
+        console.log('初始化统计图表...');
+
+        // 启用调试模式 - 在控制台输入 showDebug() 可以显示调试信息
+        window.showDebug = function() {
+            document.querySelector('.debug-info').style.display = 'block';
+        };
+        
+        // 添加测试数据使用事件
+        document.getElementById('use-test-data-btn').addEventListener('click', function() {
+            applyTestData();
+        });
+        
+        // 测试数据应用函数
+        function applyTestData() {
+            try {
+                var testDeptDataStr = document.getElementById('debug-test-data').textContent;
+                var testExtDataStr = document.getElementById('debug-test-extensions').textContent;
+                var testKwDataStr = document.getElementById('debug-test-keywords').textContent;
+                var testEmpDataStr = document.getElementById('debug-test-employees').textContent;
+                
+                console.log('应用测试数据...');
+                
+                var testDepartments = safeJSONParse(testDeptDataStr, []);
+                var testExtensions = safeJSONParse(testExtDataStr, []);
+                var testKeywords = safeJSONParse(testKwDataStr, []);
+                var testEmployees = safeJSONParse(testEmpDataStr, []);
+                
+                if (testDepartments.length === 0) {
+                    console.error('部门测试数据解析失败');
+                } else {
+                    // 使用测试数据初始化图表
+                    initDepartmentChart(testDepartments);
+                    console.log('部门图表应用测试数据成功');
+                }
+                
+                if (testExtensions.length === 0) {
+                    console.error('文件类型测试数据解析失败');
+                } else {
+                    // 初始化文件类型图表
+                    initExtensionChart(testExtensions);
+                    console.log('文件类型图表应用测试数据成功');
+                }
+                
+                if (testKeywords.length === 0) {
+                    console.error('关键词测试数据解析失败');
+                } else {
+                    // 初始化关键词图表
+                    initKeywordChart(testKeywords);
+                    console.log('关键词图表应用测试数据成功');
+                }
+                
+                if (testEmployees.length === 0) {
+                    console.error('员工测试数据解析失败');
+                } else {
+                    // 初始化员工TOP10图表
+                    initEmployeeChart(testEmployees);
+                    console.log('员工TOP10图表应用测试数据成功');
+                }
+                
+                // 初始化关键词TOP10图表，使用相同的关键词数据
+                if (testKeywords.length > 0) {
+                    initTopKeywordChart(testKeywords);
+                    console.log('关键词TOP10图表应用测试数据成功');
+                }
+                
+                // 更新表格
+                updateDepartmentTable(testDepartments);
+                
+                alert('测试数据应用成功');
+            } catch (e) {
+                console.error('应用测试数据失败:', e);
+                alert('应用测试数据失败: ' + e.message);
+            }
+        }
+        
+        // 部门图表初始化函数
+        function initDepartmentChart(deptData) {
+            var departmentCtx = document.getElementById('departmentChart');
+            if (!departmentCtx) {
+                console.error('找不到部门图表画布元素');
+                return;
+            }
+            
+            // 清除可能存在的图表
+            if (departmentCtx.chart) {
+                departmentCtx.chart.destroy();
+            }
+            
+            var ctx = departmentCtx.getContext('2d');
+            var deptLabels = deptData.map(d => d[0] || '未知部门');
+            var deptDocs = deptData.map(d => parseInt(d[2]) || 0);
+            var deptAlerts = deptData.map(d => parseInt(d[3]) || 0);
+            
+            var chart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: deptLabels,
+                    datasets: [{
+                        label: '文档数量',
+                        data: deptDocs,
+                        backgroundColor: 'rgba(54, 162, 235, 0.7)',
+                        borderColor: 'rgba(54, 162, 235, 1)',
+                        borderWidth: 1
+                    }, {
+                        label: '告警数量',
+                        data: deptAlerts,
+                        backgroundColor: 'rgba(255, 99, 132, 0.7)',
+                        borderColor: 'rgba(255, 99, 132, 1)',
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    scales: {
+                        y: {
+                            beginAtZero: true
+                        }
+                    }
+                }
+            });
+            
+            // 保存图表引用
+            departmentCtx.chart = chart;
+            console.log('部门统计图表初始化成功');
+        }
+        
+        // 文件类型图表初始化函数
+        function initExtensionChart(extData) {
+            var extensionCtx = document.getElementById('extensionChart');
+            if (!extensionCtx) {
+                console.error('找不到文件类型图表画布元素');
+                return;
+            }
+            
+            // 清除可能存在的图表
+            if (extensionCtx.chart) {
+                extensionCtx.chart.destroy();
+            }
+            
+            var ctx = extensionCtx.getContext('2d');
+            var extLabels = extData.map(e => e[0] || '未知类型');
+            var extCounts = extData.map(e => parseInt(e[1]) || 0);
+            
+            // 为饼图生成随机颜色
+            var backgroundColors = extLabels.map(function() {
+                var r = Math.floor(Math.random() * 200 + 55);
+                var g = Math.floor(Math.random() * 200 + 55);
+                var b = Math.floor(Math.random() * 200 + 55);
+                return 'rgba(' + r + ',' + g + ',' + b + ',0.7)';
+            });
+            
+            var chart = new Chart(ctx, {
+                type: 'pie',
+                data: {
+                    labels: extLabels,
+                    datasets: [{
+                        data: extCounts,
+                        backgroundColor: backgroundColors
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: {
+                            position: 'right'
+                        }
+                    }
+                }
+            });
+            
+            // 保存图表引用
+            extensionCtx.chart = chart;
+            console.log('文件类型统计图表初始化成功');
+        }
+        
+        // 关键词图表初始化函数
+        function initKeywordChart(kwData) {
+            var keywordCtx = document.getElementById('keywordChart');
+            if (!keywordCtx) {
+                console.error('找不到关键词图表画布元素');
+                return;
+            }
+            
+            // 清除可能存在的图表
+            if (keywordCtx.chart) {
+                keywordCtx.chart.destroy();
+            }
+            
+            var ctx = keywordCtx.getContext('2d');
+            var kwLabels = kwData.map(k => k[0] || '未知关键词');
+            var kwCounts = kwData.map(k => parseInt(k[1]) || 0);
+            
+            var chart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: kwLabels,
+                    datasets: [{
+                        label: '关键词告警数量',
+                        data: kwCounts,
+                        backgroundColor: 'rgba(255, 159, 64, 0.7)',
+                        borderColor: 'rgba(255, 159, 64, 1)',
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    indexAxis: 'y',  // 设置为水平条形图
+                    responsive: true,
+                    scales: {
+                        x: {
+                            beginAtZero: true
+                        }
+                    }
+                }
+            });
+            
+            // 保存图表引用
+            keywordCtx.chart = chart;
+            console.log('关键词统计图表初始化成功');
+        }
+        
+        // 员工TOP10图表初始化函数
+        function initEmployeeChart(empData) {
+            var employeeCtx = document.getElementById('employeeAlertChart');
+            if (!employeeCtx) {
+                console.error('找不到员工TOP10图表画布元素');
+                return;
+            }
+            
+            // 清除可能存在的图表
+            if (employeeCtx.chart) {
+                employeeCtx.chart.destroy();
+            }
+            
+            var ctx = employeeCtx.getContext('2d');
+            var empLabels = empData.map(e => e[0] || '未知员工');
+            var empCounts = empData.map(e => parseInt(e[1]) || 0);
+            
+            var chart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: empLabels,
+                    datasets: [{
+                        label: '告警数量',
+                        data: empCounts,
+                        backgroundColor: 'rgba(75, 192, 192, 0.7)',
+                        borderColor: 'rgba(75, 192, 192, 1)',
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    scales: {
+                        y: {
+                            beginAtZero: true
+                        }
+                    }
+                }
+            });
+            
+            // 保存图表引用
+            employeeCtx.chart = chart;
+            console.log('员工TOP10图表初始化成功');
+        }
+        
+        // 关键词TOP10图表初始化函数
+        function initTopKeywordChart(kwData) {
+            var topKeywordCtx = document.getElementById('keywordTop10Chart');
+            if (!topKeywordCtx) {
+                console.error('找不到关键词TOP10图表画布元素');
+                return;
+            }
+            
+            // 清除可能存在的图表
+            if (topKeywordCtx.chart) {
+                topKeywordCtx.chart.destroy();
+            }
+            
+            var ctx = topKeywordCtx.getContext('2d');
+            var kwLabels = kwData.map(k => k[0] || '未知关键词');
+            var kwCounts = kwData.map(k => parseInt(k[1]) || 0);
+            
+            var chart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: kwLabels,
+                    datasets: [{
+                        label: '告警数量',
+                        data: kwCounts,
+                        backgroundColor: 'rgba(153, 102, 255, 0.7)',
+                        borderColor: 'rgba(153, 102, 255, 1)',
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    scales: {
+                        y: {
+                            beginAtZero: true
+                        }
+                    }
+                }
+            });
+            
+            // 保存图表引用
+            topKeywordCtx.chart = chart;
+            console.log('关键词TOP10图表初始化成功');
+        }
+        
+        // 部门告警数量图表初始化函数
+        function initDepartmentAlertChart(deptData) {
+            var ctx = document.getElementById('departmentAlertChart');
+            if (!ctx) {
+                console.error('找不到部门告警图表画布元素');
+                return;
+            }
+            
+            // 清除可能存在的图表
+            if (ctx.chart) {
+                ctx.chart.destroy();
+            }
+            
+            var deptLabels = deptData.map(d => d[0] || '未知部门');
+            var alertCounts = deptData.map(d => parseInt(d[1]) || 0);
+            
+            var chart = new Chart(ctx.getContext('2d'), {
+                type: 'bar',
+                data: {
+                    labels: deptLabels,
+                    datasets: [{
+                        label: '告警数量',
+                        data: alertCounts,
+                        backgroundColor: 'rgba(255, 99, 132, 0.7)',
+                        borderColor: 'rgba(255, 99, 132, 1)',
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    scales: {
+                        y: {
+                            beginAtZero: true
+                        }
+                    }
+                }
+            });
+            
+            // 保存图表引用
+            ctx.chart = chart;
+            console.log('部门告警数量图表初始化成功');
+        }
+        
+        // 部门扫描人数图表初始化函数
+        function initDepartmentPersonnelChart(deptData) {
+            var ctx = document.getElementById('departmentPersonnelChart');
+            if (!ctx) {
+                console.error('找不到部门扫描人数图表画布元素');
+                return;
+            }
+            
+            // 清除可能存在的图表
+            if (ctx.chart) {
+                ctx.chart.destroy();
+            }
+            
+            var deptLabels = deptData.map(d => d[0] || '未知部门');
+            var personnelCounts = deptData.map(d => parseInt(d[1]) || 0);
+            
+            // 为饼图生成随机颜色
+            var backgroundColors = deptLabels.map(function() {
+                var r = Math.floor(Math.random() * 200 + 55);
+                var g = Math.floor(Math.random() * 200 + 55);
+                var b = Math.floor(Math.random() * 200 + 55);
+                return 'rgba(' + r + ',' + g + ',' + b + ',0.7)';
+            });
+            
+            var chart = new Chart(ctx.getContext('2d'), {
+                type: 'pie',
+                data: {
+                    labels: deptLabels,
+                    datasets: [{
+                        data: personnelCounts,
+                        backgroundColor: backgroundColors
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: {
+                            position: 'right'
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    var label = context.label || '';
+                                    var value = context.raw || 0;
+                                    return label + ': ' + value + ' 人';
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+            
+            // 保存图表引用
+            ctx.chart = chart;
+            console.log('部门扫描人数图表初始化成功');
+        }
+        
+        // 更新部门统计表格
+        function updateDepartmentTable(deptData) {
+            var tableBody = document.getElementById('departments-table-body');
+            if (!tableBody) {
+                console.error('找不到部门表格主体元素');
+                return;
+            }
+            
+            // 清空表格内容
+            tableBody.innerHTML = '';
+            
+            // 为每个部门添加行
+            deptData.forEach(function(dept) {
+                var row = document.createElement('tr');
+                var deptName = dept[0] || '未知部门';
+                var sessionCount = parseInt(dept[1]) || 0;
+                var docCount = parseInt(dept[2]) || 0;
+                var alertCount = parseInt(dept[3]) || 0;
+                var alertRatio = docCount > 0 ? ((alertCount / docCount) * 100).toFixed(2) + '%' : '0%';
+                
+                var alertClass = alertCount > 0 ? 'bg-danger' : 'bg-success';
+                
+                row.innerHTML = `
+                    <td>${deptName}</td>
+                    <td>${sessionCount}</td>
+                    <td>${docCount}</td>
+                    <td><span class="badge ${alertClass}">${alertCount}</span></td>
+                    <td>${alertRatio}</td>
+                `;
+                tableBody.appendChild(row);
+            });
+            
+            console.log('部门统计表格更新成功');
+        }
+        
+        // 从数据属性中读取数据
+        var chartData = document.getElementById('chart-data');
+        
+        // 记录原始数据到调试区域
+        document.getElementById('debug-departments').textContent = chartData.dataset.departments;
+        document.getElementById('debug-extensions').textContent = chartData.dataset.extensions;
+        document.getElementById('debug-keywords').textContent = chartData.dataset.keywords;
+        
+        // 安全的JSON解析函数
+        function safeJSONParse(jsonString, defaultValue) {
+            try {
+                if (!jsonString || jsonString.trim() === '') {
+                    console.log('JSON字符串为空:', jsonString);
+                    return defaultValue;
+                }
+                
+                // 捕获字符串前后的引号和空格
+                var cleanedString = jsonString.trim();
+                return JSON.parse(cleanedString);
+            } catch (error) {
+                console.error('JSON解析错误:', error, '原始字符串:', jsonString);
+                return defaultValue;
+            }
+        }
+        
+        // 解析JSON数据
+        var departments = safeJSONParse(chartData.dataset.departments, []);
+        var extensions = safeJSONParse(chartData.dataset.extensions, []);
+        var keywords = safeJSONParse(chartData.dataset.keywords, []);
+        var topEmployees = safeJSONParse(chartData.dataset.topEmployees, []);
+        var topKeywords = safeJSONParse(chartData.dataset.topKeywords, []);
+        var deptAlerts = safeJSONParse(chartData.dataset.deptAlerts, []);
+        var deptPersonnel = safeJSONParse(chartData.dataset.deptPersonnel, []);
+        var deptSessions = safeJSONParse(chartData.dataset.deptSessions, []);
+        
+        console.log('解析后的数据:');
+        console.log('部门数据:', departments);
+        console.log('部门告警数据:', deptAlerts);
+        console.log('部门扫描人数数据:', deptPersonnel);
+        console.log('部门扫描会话数据:', deptSessions);
+        
+        // 检查是否有统计数据
+        if (departments.length > 0) {
+            // 填充部门详细统计表格
+            updateDepartmentTable(departments);
+            
+            // 初始化各种图表
+            initDepartmentChart(departments);
+            
+            // 初始化新添加的图表
+            if (deptAlerts.length > 0) {
+                initDepartmentAlertChart(deptAlerts);
+            } else {
+                console.log('使用部门数据初始化告警图表');
+                var alertData = departments.map(dept => [dept[0], dept[3] || 0]);
+                initDepartmentAlertChart(alertData);
+            }
+            
+            // 使用扫描会话数据初始化部门扫描会话图表
+            if (deptSessions.length > 0) {
+                initDepartmentPersonnelChart(deptSessions);
+            } else if (deptPersonnel.length > 0) {
+                // 回退到使用人员数据
+                console.log('使用人员数据初始化扫描会话图表');
+                initDepartmentPersonnelChart(deptPersonnel);
+            } else {
+                console.log('缺少部门会话数据');
+                document.getElementById('departmentPersonnelChart').closest('.card-body').innerHTML = 
+                    '<div class="alert alert-info">暂无部门扫描会话数据</div>';
+            }
+            
+            // 初始化其他图表
+            if (extensions.length > 0) {
+                initExtensionChart(extensions);
+            } else {
+                document.getElementById('extensionChart').closest('.card-body').innerHTML = 
+                    '<div class="alert alert-info">暂无文件类型统计数据</div>';
+            }
+            
+            if (keywords.length > 0) {
+                initKeywordChart(keywords);
+            } else {
+                document.getElementById('keywordChart').closest('.card-body').innerHTML = 
+                    '<div class="alert alert-info">暂无关键词统计数据</div>';
+            }
+            
+            if (topEmployees.length > 0) {
+                initEmployeeChart(topEmployees);
+            } else {
+                document.getElementById('employeeAlertChart').closest('.card-body').innerHTML = 
+                    '<div class="alert alert-info">暂无员工告警统计数据</div>';
+            }
+            
+            if (topKeywords.length > 0) {
+                initTopKeywordChart(topKeywords);
+            } else {
+                document.getElementById('keywordTop10Chart').closest('.card-body').innerHTML = 
+                    '<div class="alert alert-info">暂无关键词TOP10统计数据</div>';
+            }
+        } else {
+            // 处理无数据情况
+            console.log('没有部门统计数据，尝试使用测试数据');
+            var testDataStr = document.getElementById('debug-test-data').textContent;
+            var testData = safeJSONParse(testDataStr, []);
+            
+            if (testData.length > 0) {
+                console.log('使用测试数据初始化图表');
+                updateDepartmentTable(testData);
+                initDepartmentChart(testData);
+                
+                // 使用测试数据初始化部门告警图表
+                var testAlertData = testData.map(dept => [dept[0], dept[3] || 0]);
+                initDepartmentAlertChart(testAlertData);
+                
+                // 生成测试部门人员数据
+                var testPersonnelData = testData.map(dept => [dept[0], Math.ceil(Math.random() * 10 + 2)]);
+                initDepartmentPersonnelChart(testPersonnelData);
+            } else {
+                document.querySelectorAll('.card-body canvas').forEach(function(canvas) {
+                    canvas.closest('.card-body').innerHTML = 
+                        '<div class="alert alert-info">暂无统计数据，请先添加扫描数据</div>';
+                });
+            }
+        }
+    } catch (e) {
+        console.error('统计图表初始化失败:', e);
+        document.querySelectorAll('.card-body canvas').forEach(function(canvas) {
+            canvas.closest('.card-body').innerHTML = 
+                '<div class="alert alert-danger">图表初始化失败: ' + e.message + '</div>';
+        });
+    }
+});
+</script>
+
+<!-- 添加测试数据按钮 -->
+<button id="test-data-btn" class="btn btn-warning mb-3" style="position: fixed; bottom: 10px; right: 10px; z-index: 9999; opacity: 0.7;">
+    显示调试面板
+</button>
+
+<script>
+// 显示调试面板按钮事件
+document.getElementById('test-data-btn').addEventListener('click', function() {
+    showDebug();
+});
+</script>
+{% endblock %}

@@ -1,0 +1,76 @@
+{% extends "base.html" %}
+
+{% block title %}告警信息 - 企业信息安全审计系统{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-body">
+                    <h2 class="card-title">告警信息</h2>
+                    <p class="card-text">
+                        以下是所有检测到的敏感信息告警。
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-hover" id="alertsTable">
+                            <thead>
+                                <tr>
+                                    <th>文件名</th>
+                                    <th>文件路径</th>
+                                    <th>关键词</th>
+                                    <th>员工姓名</th>
+                                    <th>部门</th>
+                                    <th>IP地址</th>
+                                    <th>检测时间</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for alert in alerts %}
+                                <tr>
+                                    <td>{{ alert.file_name }}</td>
+                                    <td>{{ alert.file_path }}</td>
+                                    <td><span class="badge bg-danger">{{ alert.keyword }}</span></td>
+                                    <td>{{ alert.session.employee_name }}</td>
+                                    <td>{{ alert.session.department }}</td>
+                                    <td>{{ alert.session.ip_address }}</td>
+                                    <td>{{ alert.detection_time.strftime('%Y-%m-%d %H:%M:%S') }}</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // 初始化数据表格，添加搜索和分页功能
+        $('#alertsTable').DataTable({
+            "language": {
+                "url": "//cdn.datatables.net/plug-ins/1.10.25/i18n/Chinese.json"
+            },
+            "pageLength": 25,
+            "order": [[6, "desc"]] // 默认按检测时间降序排序
+        });
+    });
+</script>
+{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="https://cdn.datatables.net/1.10.25/css/dataTables.bootstrap5.min.css">
+{% endblock %}

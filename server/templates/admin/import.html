@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+
+{% block title %}导入扫描数据{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="card">
+        <div class="card-header bg-primary text-white">
+            <h4>导入扫描数据</h4>
+        </div>
+        <div class="card-body">
+            <p class="mb-4">在此页面上传客户端导出的加密扫描数据文件。请确保文件格式为 .sdat</p>
+            
+            {% with messages = get_flashed_messages() %}
+            {% if messages %}
+            <div class="alert alert-warning">
+                {% for message in messages %}
+                {{ message }}
+                {% endfor %}
+            </div>
+            {% endif %}
+            {% endwith %}
+            
+            <form method="POST" enctype="multipart/form-data">
+                <div class="mb-3">
+                    <label for="file" class="form-label">选择扫描数据文件</label>
+                    <input type="file" class="form-control" id="file" name="file" accept=".sdat" required>
+                    <div class="form-text">请选择由客户端导出的 .sdat 格式文件</div>
+                </div>
+                
+                <div class="mb-3">
+                    <label for="password" class="form-label">解密密码</label>
+                    <input type="password" class="form-control" id="password" name="password" value="Csxxb@2025" required>
+                    <div class="form-text">客户端使用默认密码 Csxxb@2025</div>
+                </div>
+                
+                <button type="submit" class="btn btn-primary">导入数据</button>
+                <a href="{{ url_for('index') }}" class="btn btn-secondary">返回</a>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %} 

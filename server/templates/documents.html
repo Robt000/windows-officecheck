@@ -1,0 +1,91 @@
+{% extends "base.html" %}
+
+{% block title %}文档列表 - 企业信息安全审计系统{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-body">
+                    <h2 class="card-title">文档列表</h2>
+                    <p class="card-text">
+                        以下是所有扫描到的文档列表。
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-hover" id="documentsTable">
+                            <thead>
+                                <tr>
+                                    <th>员工姓名</th>
+                                    <th>部门</th>
+                                    <th>文件名</th>
+                                    <th>扩展名</th>
+                                    <th>大小</th>
+                                    <th>所有者</th>
+                                    <th>作者</th>
+                                    <th>最后保存者</th>
+                                    <th>创建时间</th>
+                                    <th>修改时间</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for doc in documents %}
+                                <tr>
+                                    <td>
+                                        {% set session = get_session(doc.session_id) %}
+                                        {{ session.employee_name if session else '未知' }}
+                                    </td>
+                                    <td>
+                                        {% set session = get_session(doc.session_id) %}
+                                        {{ session.department if session else '未知' }}
+                                    </td>
+                                    <td>{{ doc.file_name }}</td>
+                                    <td>{{ doc.extension }}</td>
+                                    <td>{{ (doc.size / 1024)|round(2) }} KB</td>
+                                    <td>{{ doc.owner }}</td>
+                                    <td>{{ doc.author }}</td>
+                                    <td>{{ doc.last_saved_by }}</td>
+                                    <td>
+                                        {% set session = get_session(doc.session_id) %}
+                                        {{ session.department if session else '未知' }}
+                                    </td>
+                                    <td>{{ doc.creation_time.strftime('%Y-%m-%d %H:%M:%S') }}</td>
+                                    <td>{{ doc.modified_time.strftime('%Y-%m-%d %H:%M:%S') }}</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // 初始化数据表格，添加搜索和分页功能
+        $('#documentsTable').DataTable({
+            "language": {
+                "url": "//cdn.datatables.net/plug-ins/1.10.25/i18n/Chinese.json"
+            },
+            "pageLength": 25
+        });
+    });
+</script>
+{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="https://cdn.datatables.net/1.10.25/css/dataTables.bootstrap5.min.css">
+{% endblock %}

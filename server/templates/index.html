@@ -1,0 +1,133 @@
+{% extends "base.html" %}
+
+{% block title %}首页 - 企业信息安全审计系统{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-body">
+                    <h2 class="card-title">企业信息安全审计系统</h2>
+                    <p class="card-text">
+                        欢迎使用企业信息安全审计系统。本系统用于对员工电脑进行安全审计，检查是否存在涉密文档或敏感信息。
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-md-6 col-lg-3 mb-4">
+            <div class="card text-white bg-primary">
+                <div class="card-body">
+                    <h5 class="card-title">扫描会话</h5>
+                    <p class="card-text display-4">{{ session_count }}</p>
+                    <a href="/sessions" class="btn btn-light">查看详情</a>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-6 col-lg-3 mb-4">
+            <div class="card text-white bg-success">
+                <div class="card-body">
+                    <h5 class="card-title">文档总数</h5>
+                    <p class="card-text display-4">{{ document_count }}</p>
+                    <a href="/documents" class="btn btn-light">查看详情</a>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-6 col-lg-3 mb-4">
+            <div class="card text-white bg-danger">
+                <div class="card-body">
+                    <h5 class="card-title">告警信息</h5>
+                    <p class="card-text display-4">{{ alert_count }}</p>
+                    <a href="/alerts" class="btn btn-light">查看详情</a>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-6 col-lg-3 mb-4">
+            <div class="card text-white bg-info">
+                <div class="card-body">
+                    <h5 class="card-title">部门数量</h5>
+                    <p class="card-text display-4">{{ department_count }}</p>
+                    <a href="/statistics" class="btn btn-light">查看详情</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-md-6 mb-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">最近扫描会话</h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>员工姓名</th>
+                                    <th>部门</th>
+                                    <th>IP地址</th>
+                                    <th>扫描时间</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for session in recent_sessions %}
+                                <tr>
+                                    <td>{{ session.employee_name }}</td>
+                                    <td>{{ session.department }}</td>
+                                    <td>{{ session.ip_address }}</td>
+                                    <td>{{ session.scan_time.strftime('%Y-%m-%d %H:%M') }}</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    <a href="/sessions" class="btn btn-primary">查看全部</a>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-6 mb-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">最近告警信息</h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>文件名</th>
+                                    <th>关键词</th>
+                                    <th>员工姓名</th>
+                                    <th>检测时间</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for alert in recent_alerts %}
+                                <tr>
+                                    <td>{{ alert.file_name }}</td>
+                                    <td><span class="badge bg-danger">{{ alert.keyword }}</span></td>
+                                    <td>{{ alert.session.employee_name }}</td>
+                                    <td>{{ alert.detection_time.strftime('%Y-%m-%d %H:%M') }}</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    <a href="/alerts" class="btn btn-danger">查看全部</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+{% endblock %}
