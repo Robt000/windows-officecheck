@@ -1,0 +1,25 @@
+# Web框架
+flask==2.3.3
+flask-sqlalchemy==3.1.1
+flask-login==0.6.2
+
+# 数据库
+sqlalchemy==2.0.20
+
+# 加密
+cryptography==41.0.3
+
+# 文档处理
+python-docx==1.0.1
+PyPDF2==3.0.1
+openpyxl==3.1.2
+pywin32==306
+
+# 网络请求
+requests==2.31.0
+
+# 打包工具
+pyinstaller==6.0.0
+
+# 生产环境WSGI服务器
+waitress==2.1.2
